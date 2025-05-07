@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Cardle – Auto Wordle</title>
+  <style>
+    body { font-family: sans-serif; text-align: center; padding: 20px; }
+    .guess-box { margin: 10px auto; display: flex; justify-content: center; }
+    .cell { width: 100px; padding: 5px; margin: 2px; border: 1px solid #ccc; border-radius: 4px; }
+    .green { background-color: #4CAF50; color: white; }
+    .yellow { background-color: #FFEB3B; }
+    .gray { background-color: #ddd; }
+    input[type=text] { width: 300px; padding: 10px; font-size: 16px; }
+    #result { margin-top: 20px; font-weight: bold; }
+    #previousAnswer { color: gray; font-size: 0.9em; }
+  </style>
+</head>
+<body>
+  <h1>Cardle – Uhodni dnešní auto!</h1>
+  <p>5 pokusù dennì. Každý den nové auto. Hodnì štìstí!</p>
+ 
+  <div id="guessArea"></div>
+ 
+  <input type="text" id="guessInput" placeholder="Zadej znaèku a model..." />
+  <button onclick="submitGuess()">Tipnout</button>
+ 
+  <div id="result"></div>
+  <div id="previousAnswer"></div>
+ 
+  <h3>Scoreboard</h3>
+  <div id="scoreboard"></div>
+ 
+  <script>
+    const today = new Date().toISOString().split('T')[0];
+ 
+    const dailyCars = {
+      '2025-05-07': {
+        model: 'Ford Mustang',
+        brand: 'Ford',
+        year: 2015,
+        body: 'Coupe',
+        origin: 'USA'
+      },
+      '2025-05-06': {
+        model: 'Toyota Supra',
+        brand: 'Toyota',
+        year: 2020,
+        body: 'Coupe',
+        origin: 'Japan'
+      }
+      // Pøidej další dny sem...
+    };
+ 
+    const answer = dailyCars[today];
+    const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0];
+    const yesterdayCar = dailyCars[yesterday];
+    if (yesterdayCar) {
+      document.getElementById("previousAnswer").innerText = `Vèerejší auto: ${yesterdayCar.model}`;
+    }
+ 
+    let guessCount = 0;
+    const maxGuesses = 5;
+ 
+    function submitGuess() {
+      if (!answer) return alert("Dnešní auto ještì není nastavené.");
+      const input = document.getElementById("guessInput").value.trim();
+      if (!input) return;
+ 
+      guessCount++;
+      if (guessCount > maxGuesses) return;
+ 
+      const guessBox = document.createElement("div");
+      guessBox.className = "guess-box";
+ 
+      const parts = {
+        brand: input.split(' ')[0] || '',
+        model: input,
+        year: parseInt(input.match(/\d{4}/)) || 0,
+        body: '',
+        origin: ''
+      };
+ 
+      ['brand', 'year', 'body', 'origin'].forEach(key => {
+        const cell = document.createElement("div");
+        cell.className = "cell";
+        cell.innerText = key.charAt(0).toUpperCase() + key.slice(1);
+        if (parts[key].toString().toLowerCase() === answer[key].toString().toLowerCase()) {
+          cell.classList.add("green");
+        } else if (answer[key].toString().toLowerCase().includes(parts[key].toString().toLowerCase())) {
+          cell.classList.add("yellow");
+        } else {
+          cell.classList.add("gray");
+        }
+        guessBox.appendChild(cell);
+      });
+ 
+      document.getElementById("guessArea").appendChild(guessBox);
+ 
+      if (parts.model.toLowerCase() === answer.model.toLowerCase()) {
+        document.getElementById("result").innerText = `Správnì! Uhodl jsi za ${guessCount} pokusù.`;
+        updateScoreboard(guessCount);
+        document.getElementById("guessInput").disabled = true;
+      } else if (guessCount >= maxGuesses) {
+        document.getElementById("result").innerText = `Konec hry. Správná odpovìï: ${answer.model}`;
+      }
+    }
+ 
+    function updateScoreboard(score) {
+      let scores = JSON.parse(localStorage.getItem("cardleScores") || "[]");
+      scores.push({ date: today, guesses: score });
+      localStorage.setItem("cardleScores", JSON.stringify(scores));
+      renderScoreboard();
+    }
+ 
+    function renderScoreboard() {
+      let scores = JSON.parse(localStorage.getItem("cardleScores") || "[]");
+document.getElementById("scoreboard").innerHTML = scores.map(s => `Den: ${s.date}, Pokusy: ${s.guesses}`).join("<br>");
+    }
+ 
+    renderScoreboard();
+  </script>
+</body>
+</html>
